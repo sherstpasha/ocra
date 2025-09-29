@@ -1,4 +1,5 @@
 include README.md
 include LICENSE
 recursive-include src/ocra *.py
-recursive-include src/ocra/orientation/weights *.pth
+recursive-include src/ocra/orientation *.pth
+recursive-include src/ocra/orientation *.json

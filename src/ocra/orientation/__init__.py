@@ -8,26 +8,25 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from torchvision import transforms
 
+import importlib.resources as pkg_resources
+import ocra.orientation as orientation_pkg
+
 from .utils import Config, _get_data_cfg_compat
 from .model import OrientationModel
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
+
+
 def _default_extensions() -> List[str]:
     return [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"]
 
 
 class _PathsDataset(Dataset):
-    """
-    Простой датасет для инфера по списку файлов.
-    Считает aspect после возможного внешнего поворота (мы НИЧЕГО не крутим тут),
-    просто используем исходное изображение.
-    """
     def __init__(self, paths: List[str], model_name: str):
         self.paths = paths
         data_cfg = _get_data_cfg_compat(model_name)
         H, W = data_cfg["input_size"][1], data_cfg["input_size"][2]
         mean, std = data_cfg["mean"], data_cfg["std"]
-
         self.transform = transforms.Compose([
             transforms.Resize((H, W)),
             transforms.ToTensor(),
@@ -41,7 +40,6 @@ class _PathsDataset(Dataset):
         path = self.paths[idx]
         with Image.open(path) as im:
             img = im.convert("RGB")
-
         w, h = img.size
         aspect = float(w) / float(h) if h != 0 else 0.0
         x = self.transform(img)
@@ -58,77 +56,72 @@ def _collate_with_aspect(batch):
 class OrientationPredictor:
     def __init__(
         self,
-        weights_path: Optional[str] = r"src\ocra\orientation\best_acc_weights.pth",
+        weights_path: Optional[str] = None,
         device: str = "cpu",
-        cfg: Union[str, Config] = "src\ocra\orientation\config.json",
+        cfg: Union[str, Config, None] = None,
         batch_size: int = 64,
         num_workers: int = 4,
     ):
+        if isinstance(cfg, Config):
+            self.cfg = cfg
+        elif isinstance(cfg, str):
+            self.cfg = Config(cfg)
+        else:
+            with pkg_resources.as_file(
+                pkg_resources.files(orientation_pkg).joinpath("config.json")
+            ) as p:
+                self.cfg = Config(str(p))
 
-        self.cfg = Config(cfg) if isinstance(cfg, str) else cfg
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.batch_size = int(batch_size)
         self.num_workers = int(num_workers)
 
-
         self.model = OrientationModel(self.cfg).to(self.device)
         self.model.eval()
-
 
         wp = (
             weights_path
             or getattr(self.cfg, "infer_weights_path", None)
             or self._find_default_weights()
         )
-        if wp:
-            self._load_weights(wp)
+        if wp is not None and os.path.isfile(wp):
+            state = torch.load(wp, map_location="cpu")
+        else:
+            with pkg_resources.as_file(
+                pkg_resources.files(orientation_pkg).joinpath("best_acc_weights.pth")
+            ) as p:
+                state = torch.load(p, map_location="cpu")
 
+        if isinstance(state, dict) and "model" in state and isinstance(state["model"], dict):
+            self.model.load_state_dict(state["model"], strict=True)
+        else:
+            self.model.load_state_dict(state, strict=True)
 
-        self.extensions = [
-            e.lower() for e in getattr(self.cfg, "extensions", _default_extensions())
-        ]
+        self.extensions = [e.lower() for e in getattr(self.cfg, "extensions", _default_extensions())]
 
     def _find_default_weights(self) -> Optional[str]:
         exp_dir = getattr(self.cfg, "exp_dir", None)
         if not exp_dir:
             return None
-        candidates = [
-            os.path.join(exp_dir, "best_acc_ckpt.pth"),
-            os.path.join(exp_dir, "best_acc_weights.pth"),
-            os.path.join(exp_dir, "last_ckpt.pth"),
-            os.path.join(exp_dir, "last_weights.pth"),
-        ]
-        for p in candidates:
+        for name in ("best_acc_ckpt.pth", "best_acc_weights.pth", "last_ckpt.pth", "last_weights.pth"):
+            p = os.path.join(exp_dir, name)
             if os.path.isfile(p):
                 return p
         return None
 
-    def _load_weights(self, path: str):
-        obj = torch.load(path, map_location="cpu")
-        if isinstance(obj, dict) and "model" in obj and isinstance(obj["model"], dict):
-            self.model.load_state_dict(obj["model"], strict=True)
-        else:
-            self.model.load_state_dict(obj, strict=True)
-
     @torch.no_grad()
     def predict_path(self, path: str) -> Dict[str, Any]:
-        """Предсказание для одного изображения по пути."""
-        results = self.predict_iterable([path])
-        return results[0] if results else {}
+        res = self.predict_iterable([path])
+        return res[0] if res else {}
 
     @torch.no_grad()
     def predict_folder(self, folder: str, recursive: bool = True) -> List[Dict[str, Any]]:
-        """Собрать все файлы из папки и предсказать."""
-        paths = self._gather_paths(folder, recursive=recursive)
-        return self._predict_paths(paths)
+        return self._predict_paths(self._gather_paths(folder, recursive=recursive))
 
     @torch.no_grad()
     def predict_iterable(self, paths: Iterable[str]) -> List[Dict[str, Any]]:
-        """Предсказать по любому итерируемому набору путей."""
-        paths = [p for p in paths if self._is_image_path(p)]
-        return self._predict_paths(paths)
+        return self._predict_paths([p for p in paths if self._is_image_path(p)])
 
-    # ---------- утилиты ----------
     def _is_image_path(self, path: str) -> bool:
         return any(path.lower().endswith(ext) for ext in self.extensions)
 
@@ -160,24 +153,21 @@ class OrientationPredictor:
             num_workers=self.num_workers, pin_memory=True,
             collate_fn=_collate_with_aspect
         )
-
         outputs: List[Dict[str, Any]] = []
         for x, _, batch_paths, aspect in loader:
             x = x.to(self.device, non_blocking=True)
             aspect = aspect.to(self.device, non_blocking=True)
-
-            with torch.cuda.amp.autocast():
+            with torch.cuda.amp.autocast(enabled=(self.device.type == "cuda")):
                 logits = self.model(x, aspect)
                 probs_vert = F.softmax(logits, dim=1)[:, 1]
                 preds = logits.argmax(1)
-
             for p, pred, pv, a in zip(batch_paths, preds.cpu().tolist(),
                                       probs_vert.cpu().tolist(), aspect.cpu().tolist()):
                 outputs.append({
                     "path": p,
-                    "pred": int(pred),             # 0=HORZ, 1=VERT
-                    "prob_vert": float(pv),        # P(label=1)
-                    "prob_horz": float(1.0 - pv),  # P(label=0)
+                    "pred": int(pred),
+                    "prob_vert": float(pv),
+                    "prob_horz": float(1.0 - pv),
                     "aspect": float(a),
                 })
         return outputs

@@ -11,7 +11,7 @@ from torchvision import transforms
 from .utils import Config, _get_data_cfg_compat
 from .model import OrientationModel
 
-__version__ = "0.1.1"
+__version__ = "0.1.3"
 def _default_extensions() -> List[str]:
     return [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"]
 
@@ -58,9 +58,9 @@ def _collate_with_aspect(batch):
 class OrientationPredictor:
     def __init__(
         self,
-        weights_path: Optional[str] = r"src\orientation\best_acc_weights.pth",
+        weights_path: Optional[str] = r"src\ocra\orientation\best_acc_weights.pth",
         device: str = "cpu",
-        cfg: Union[str, Config]="config.json",
+        cfg: Union[str, Config] = "src\ocra\orientation\config.json",
         batch_size: int = 64,
         num_workers: int = 4,
     ):

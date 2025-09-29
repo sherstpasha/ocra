@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocra"
-version = "0.1.1"
+version = "0.1.3"
 description = "ocra: toolbox for analyzing text fragments (OrientationPredictor)."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -25,6 +25,5 @@ dependencies = [
 where = ["src"]
 include = ["ocra*"]
 
-# <<< ВАЖНО: упаковать файл весов >>>
 [tool.setuptools.package-data]
-"ocra.orientation" = ["weights/*.pth"]
+"ocra.orientation" = ["best_acc_weights.pth"]

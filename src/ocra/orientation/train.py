@@ -370,4 +370,4 @@ def run_training(cfg_path: str, device_str: str = "cuda"):
 
 
 if __name__ == "__main__":
-    run_training("config.json", device_str="cuda")
+    run_training("src\ocra\orientation\config.json", device_str="cuda")

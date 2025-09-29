@@ -1,19 +1,19 @@
 {
-  "model_name": "efficientnet_b0",
+  "model_name": "mobilenetv3_small_050",
   "image_dir": "C:/Users/USER/Desktop/archive_25_09/dataset/val/img",
   "csv_path": "C:/Users/USER/Desktop/archive_25_09/dataset/val/rotations.csv",
   "extensions": [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"],
   "seed": 42,
   "p_vertical": 0.5,
 
-  "hidden_dim": 256,
+  "hidden_dim": 64,
   "drop": 0.2,
 
   "exp_dir": "exp_orientation_b0",
 
   "batch_size": 32,
   "epochs": 15,
-  "lr": 0.001,
+  "lr": 0.00003,
   "optimizer": "AdamW",
   "scheduler": "ReduceLROnPlateau",
   "weight_decay": 0.0001,

@@ -1,4 +1,4 @@
-from src.orientation import OrientationPredictor
+from src.ocra.orientation import OrientationPredictor
 
 IMAGE_PATH = r"examples\hrk_463.png"
 

@@ -5,10 +5,7 @@ numpy>=1.19.0,<2.0
 torchvision==0.15.2+cu118
 torchaudio==2.0.2+cu118
 
-kornia>=0.6.0
 numpy>=1.19.0
 Pillow>=8.0.0
 tensorboard>=2.4.0
-matplotlib>=3.3.0
 tqdm
-albumentations==1.3.1

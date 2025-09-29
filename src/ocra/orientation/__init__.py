@@ -11,7 +11,7 @@ from torchvision import transforms
 from .utils import Config, _get_data_cfg_compat
 from .model import OrientationModel
 
-
+__version__ = "0.1.1"
 def _default_extensions() -> List[str]:
     return [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"]
 
@@ -60,7 +60,7 @@ class OrientationPredictor:
         self,
         weights_path: Optional[str] = r"src\orientation\best_acc_weights.pth",
         device: str = "cpu",
-        cfg: Union[str, Config]="src\orientation\config.json",
+        cfg: Union[str, Config]="config.json",
         batch_size: int = 64,
         num_workers: int = 4,
     ):

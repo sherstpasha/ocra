@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocra"
+version = "0.1.1"
+description = "ocra: toolbox for analyzing text fragments (OrientationPredictor)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+  "torch>=2.0,<3",
+  "torchvision>=0.15,<0.20",
+  "timm>=0.9",
+  "Pillow>=8.0.0",
+  "tqdm>=4.65",
+  "numpy>=1.21,<3"
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ocra*"]
+
+# <<< ВАЖНО: упаковать файл весов >>>
+[tool.setuptools.package-data]
+"ocra.orientation" = ["weights/*.pth"]

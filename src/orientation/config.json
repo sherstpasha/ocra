@@ -1,0 +1,27 @@
+{
+  "model_name": "efficientnet_b0",
+  "image_dir": "C:/Users/USER/Desktop/archive_25_09/dataset/val/img",
+  "csv_path": "C:/Users/USER/Desktop/archive_25_09/dataset/val/rotations.csv",
+  "extensions": [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"],
+  "seed": 42,
+  "p_vertical": 0.5,
+
+  "hidden_dim": 256,
+  "drop": 0.2,
+
+  "exp_dir": "exp_orientation_b0",
+
+  "batch_size": 32,
+  "epochs": 15,
+  "lr": 0.001,
+  "optimizer": "AdamW",
+  "scheduler": "ReduceLROnPlateau",
+  "weight_decay": 0.0001,
+  "momentum": 0.9,
+  "num_workers": 4,
+  "save_every": 1,
+
+  "val_frac": 0.1,
+  "val_size": 0,
+  "resume_path": null 
+}

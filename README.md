@@ -21,8 +21,8 @@ pip install ocra[gpu]
 ## Быстрый старт
 
 ```python
-from src.ocra.orientation import OrientationPredictor
-from src.ocra.ishandwritten import HandwrittenPredictor
+from ocra import OrientationPredictor
+from ocra import HandwrittenPredictor
 
 def main():
     # Инициализация
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 ![Объяснение OrientationPredictor](./explaing_orient.py.png)
 
 ```python
-from src.ocra.orientation import OrientationPredictor
+from ocra import OrientationPredictor
 
 predictor = OrientationPredictor()
 result = predictor.predict_single("examples/hrk_463.png")
@@ -73,8 +73,10 @@ print(f"Уверенность: {result['confidence']:.4f}")
 ## HandwrittenPredictor
 Классифицирует тип текста на изображении: рукописный или печатный.
 
+![Объяснение HandwrittenPredictor](./explaing_hand.py.png)
+
 ```python
-from src.ocra.ishandwritten import HandwrittenPredictor
+from ocra import HandwrittenPredictor
 
 predictor = HandwrittenPredictor()
 result = predictor.predict_single("examples/hrk_463.png")

@@ -1,5 +1,5 @@
-from src.ocra.orientation import OrientationPredictor
-from src.ocra.ishandwritten import HandwrittenPredictor
+from src.ocra import OrientationPredictor
+from src.ocra import HandwrittenPredictor
 
 def main():
     orient_pred = OrientationPredictor(device="cpu", verbose=0)

@@ -1,4 +1,4 @@
 from .orientation import OrientationPredictor
-from .ishandwritten import HandwrittenClassifier, HandwrittenDataset, HandwrittenTrainer, HandwrittenConfig
+from .ishandwritten import HandwrittenPredictor
 
-__version__ = "0.1.5"
+__version__ = "0.2.1"

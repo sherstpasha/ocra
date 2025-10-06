@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocra"
-version = "0.1.5"
+version = "0.2.0"
 description = "ocra"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = {text = "MIT"}
 keywords = ["computer-vision", "image-processing", "orientation", "rotation", "onnx", "pytorch"]
 authors = [
     { name = "sherstpasha" }
@@ -16,7 +16,7 @@ authors = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -32,7 +32,9 @@ dependencies = [
   "numpy>=1.21,<3",
   "Pillow>=8.0.0",
   "tqdm>=4.65",
-  "timm>=0.9.16"
+  "timm>=0.9.16",
+  "opencv-python>=4.5.0",
+  "scikit-learn>=1.0.0"
 ]
 
 # Optional dependencies
@@ -52,7 +54,8 @@ where = ["src"]
 include = ["ocra*"]
 
 [tool.setuptools.package-data]
-"ocra.orientation" = ["best_acc_weights.pth", "config.json", "orientation_model.onnx"]
+"ocra.orientation" = ["config.json", "orientation_model.onnx"]
+"ocra.ishandwritten" = ["config.json", "handwritten_model.onnx"]
 
 [project.urls]
 Homepage = "https://github.com/sherstpasha/Ocra"

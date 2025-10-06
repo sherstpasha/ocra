@@ -14,7 +14,6 @@ class HandwrittenPredictor:
     ):
         self.confidence_threshold = confidence_threshold
         
-        # Автоматическое определение пути к модели
         module_dir = os.path.dirname(__file__)
         
         if model_path is None:
@@ -24,10 +23,8 @@ class HandwrittenPredictor:
         
         self.model_path = model_path
         
-        # Настройка провайдеров без лишних попыток CUDA
         providers = ['CPUExecutionProvider']
         
-        # Создаем сессию с подавлением предупреждений
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -74,23 +71,21 @@ class HandwrittenPredictor:
         class_names = {0: 'printed', 1: 'handwritten'}
         prediction_name = class_names[predicted_class]
         
-        # Унифицированная структура с OrientationPredictor
         result = {
             'pred_class': predicted_class,
             'prediction': prediction_name,
-            'class_name': prediction_name,  # Backward compatibility
+            'class_name': prediction_name,
             'confidence': confidence,
             'prob_printed': float(probabilities[0]),
             'prob_handwritten': float(probabilities[1]),
-            'probabilities': {  # Backward compatibility
+            'probabilities': {
                 'printed': float(probabilities[0]),
                 'handwritten': float(probabilities[1])
             },
             'high_confidence': confidence >= self.confidence_threshold,
-            'is_confident': confidence >= self.confidence_threshold  # Backward compatibility
+            'is_confident': confidence >= self.confidence_threshold
         }
         
-        # Добавляем информацию о файле если это путь к файлу
         if isinstance(image, str):
             result['path'] = image
             result['filename'] = os.path.basename(image)
@@ -113,24 +108,3 @@ class HandwrittenPredictor:
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         exp_x = np.exp(x - np.max(x))
         return exp_x / np.sum(exp_x)
-
-if __name__ == "__main__":
-    model_path = "handwritten_model.onnx"
-    
-    if os.path.exists(model_path):
-        predictor = HandwrittenPredictor(model_path, confidence_threshold=0.7)
-        
-        test_folder = r"C:\Users\USER\Desktop\archive_25_09\dataset\val\img_hand"
-        if os.path.exists(test_folder):
-            test_images = [os.path.join(test_folder, f) for f in os.listdir(test_folder)[:5] 
-                          if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-            
-            print(f"\nТестируем на {len(test_images)} рукописных изображениях:")
-            for img_path in test_images:
-                result = predictor.predict_single(img_path)
-                print(f"{os.path.basename(img_path)}: {result['class_name']} "
-                      f"({result['confidence']:.3f}) {'✓' if result['class_name'] == 'handwritten' else '✗'}")
-        else:
-            print(f"Тестовая папка не найдена: {test_folder}")
-    else:
-        print(f"ONNX модель не найдена: {model_path}")

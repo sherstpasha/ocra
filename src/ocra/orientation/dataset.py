@@ -1,6 +1,6 @@
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, ConcatDataset, Subset
 from torchvision import transforms
-import os, csv
+import os, csv, random
 from PIL import Image
 import torch
 from utils import _get_data_cfg_compat
@@ -109,3 +109,50 @@ def collate_with_aspect(batch):
     labels = torch.stack(labels, dim=0)
     aspects = torch.stack(aspects, dim=0)
     return xs, labels, paths, aspects
+
+
+def make_datasets_three_way(cfg):
+    exp_dir = getattr(cfg, "exp_dir", "exp1")
+    os.makedirs(exp_dir, exist_ok=True)
+    val_split_path = os.path.join(exp_dir, "val_split.txt")
+    test_split_path = os.path.join(exp_dir, "test_split.txt")
+
+    base_train = OrientationDataset(cfg, is_train=True)
+    n_total = len(base_train)
+    if n_total == 0:
+        raise RuntimeError("No images found for splitting")
+
+    seed = int(getattr(cfg, "seed", 42))
+    val_split = float(getattr(cfg, "val_split", 0.15))
+    test_split = float(getattr(cfg, "test_split", 0.15))
+
+    if os.path.exists(val_split_path) and os.path.exists(test_split_path):
+        with open(val_split_path, "r") as f:
+            val_indices = [int(x.strip()) for x in f.readlines() if x.strip()]
+        with open(test_split_path, "r") as f:
+            test_indices = [int(x.strip()) for x in f.readlines() if x.strip()]
+        train_indices = [i for i in range(n_total) if i not in val_indices and i not in test_indices]
+    else:
+        indices = list(range(n_total))
+        random.seed(seed)
+        random.shuffle(indices)
+
+        n_val = int(n_total * val_split)
+        n_test = int(n_total * test_split)
+
+        val_indices = indices[:n_val]
+        test_indices = indices[n_val:n_val + n_test]
+        train_indices = indices[n_val + n_test:]
+
+        with open(val_split_path, "w") as f:
+            f.write("\n".join(map(str, val_indices)))
+        with open(test_split_path, "w") as f:
+            f.write("\n".join(map(str, test_indices)))
+
+    train_ds = Subset(base_train, train_indices)
+    
+    base_val = OrientationDataset(cfg, is_train=False)
+    val_ds = Subset(base_val, val_indices)
+    test_ds = Subset(base_val, test_indices)
+
+    return train_ds, val_ds, test_ds

@@ -1,5 +1,9 @@
 import json
 import os
+import random
+from typing import Dict, Any
+import torch
+import torch.nn as nn
 import timm
 from timm.data import resolve_data_config
 
@@ -44,3 +48,46 @@ class Config:
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+
+def set_seed(seed: int = 42):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
+
+
+def save_checkpoint(path: str, model: nn.Module, optimizer, scheduler, scaler,
+                    epoch: int, global_step: int, best_val_loss: float, best_val_acc: float,
+                    extra: Dict[str, Any] | None = None):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    ckpt = {
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict() if optimizer else None,
+        "scheduler": scheduler.state_dict() if scheduler else None,
+        "scaler": scaler.state_dict() if scaler else None,
+        "epoch": epoch,
+        "global_step": global_step,
+        "best_val_loss": best_val_loss,
+        "best_val_acc": best_val_acc,
+        "extra": extra or {},
+    }
+    torch.save(ckpt, path)
+
+
+def load_checkpoint(path: str, model: nn.Module, optimizer=None, scheduler=None, scaler=None):
+    ckpt = torch.load(path, map_location="cpu")
+    model.load_state_dict(ckpt["model"], strict=True)
+    if optimizer and ckpt.get("optimizer"):
+        optimizer.load_state_dict(ckpt["optimizer"])
+    if scheduler and ckpt.get("scheduler"):
+        scheduler.load_state_dict(ckpt["scheduler"])
+    if scaler and ckpt.get("scaler"):
+        scaler.load_state_dict(ckpt["scaler"])
+    return ckpt
+
+
+def save_weights(path: str, model: nn.Module):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    torch.save(model.state_dict(), path)

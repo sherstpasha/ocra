@@ -28,26 +28,32 @@ class OrientationModel(nn.Module):
     @torch.no_grad()
     def _infer_feat_dim(self) -> int:
         self.backbone.eval()
-
         dummy = torch.zeros(1, 3, 224, 224)
         out = self.backbone(dummy)
-
-        if isinstance(out, (list, tuple)):
-            out = out[-1]
-        if out.ndim == 4:
-            out = out.mean(dim=(2, 3))
         return int(out.shape[1])
 
     def forward(self, x: torch.Tensor, aspect: torch.Tensor) -> torch.Tensor:
         feats = self.backbone(x)
-        if isinstance(feats, (list, tuple)):
-            feats = feats[-1]
-        if feats.ndim == 4:
-            feats = feats.mean(dim=(2, 3))
-
-        if aspect.dim() == 1:
-            aspect = aspect.unsqueeze(1)
-        aspect = aspect.to(feats.dtype).to(feats.device)
-
-        z = torch.cat([feats, aspect], dim=1)
+        z = torch.cat([feats, aspect.view(-1, 1)], dim=1)
         return self.classifier(z)
+    
+    def export_onnx(self, path: str, input_size=(224, 224)):
+        self.eval()
+        dummy_image = torch.randn(1, 3, *input_size)
+        dummy_aspect = torch.tensor([[1.0]])
+        
+        torch.onnx.export(
+            self,
+            (dummy_image, dummy_aspect),
+            path,
+            export_params=True,
+            opset_version=11,
+            do_constant_folding=True,
+            input_names=['image', 'aspect'],
+            output_names=['logits'],
+            dynamic_axes={
+                'image': {0: 'batch_size'},
+                'aspect': {0: 'batch_size'},
+                'logits': {0: 'batch_size'}
+            }
+        )

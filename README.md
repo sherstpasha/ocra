@@ -6,7 +6,11 @@
 ## Установка
 
 ```bash
-pip install ocra
+# С CPU поддержкой
+pip install ocra[cpu] 
+
+# С GPU поддержкой (требует CUDA + cuDNN)
+pip install ocra[gpu]
 ```
 
 ---
@@ -23,14 +27,14 @@ IMAGE_PATH = r"examples\hrk_463.png"
 def main():
     model = OrientationPredictor()
 
-    result = model.predict_path(IMAGE_PATH)
-    label = "VERT" if result["pred"] == 1 else "HORZ"
+    result = model.predict_single(IMAGE_PATH)
+    label = "VERT" if result["pred_class"] == 1 else "HORZ"
 
     print("Path:", result["path"])
-    print("Pred:", label, f"(class={result['pred']})")
-    print(f"Prob VERT: {result['prob_vert']:.4f}")
-    print(f"Prob HORZ: {result['prob_horz']:.4f}")
-    print(f"Aspect (w/h): {result['aspect']:.4f}")
+    print("Pred:", label, f"(class={result['pred_class']})")
+    print(f"Prob VERT: {result['prob_vertical']:.4f}")
+    print(f"Prob HORZ: {result['prob_horizontal']:.4f}")
+    print(f"Aspect (w/h): {result['aspect_ratio']:.4f}")
 
 if __name__ == "__main__":
     main()

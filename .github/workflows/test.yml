@@ -30,13 +30,18 @@ jobs:
     
     - name: Verify no PyTorch installed
       run: |
+        python -c "import sys; sys.exit(0 if 'torch' not in sys.modules else 1)"
+      continue-on-error: false
+    
+    - name: Check PyTorch not importable
+      run: |
         python -c "
         try:
             import torch
-            print('❌ PyTorch should not be installed for inference!')
+            print('ERROR: PyTorch should not be installed for inference!')
             exit(1)
         except ImportError:
-            print('✅ PyTorch correctly not installed')
+            print('OK: PyTorch correctly not installed')
         "
     
     - name: Test imports

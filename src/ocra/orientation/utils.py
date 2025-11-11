@@ -1,7 +1,7 @@
 import json
 import os
 import random
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Опциональные импорты для training
 try:
@@ -67,7 +67,7 @@ class Config:
                 exp_idx += 1
             self.exp_dir = f"exp{exp_idx}"
 
-    def save(self, out_path: str | None = None):
+    def save(self, out_path: Optional[str] = None):
         if out_path is None:
             out_path = os.path.join(self.exp_dir, "config.json")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -90,7 +90,7 @@ def set_seed(seed: int = 42):
 
 def save_checkpoint(path: str, model, optimizer, scheduler, scaler,
                     epoch: int, global_step: int, best_val_loss: float, best_val_acc: float,
-                    extra: Dict[str, Any] | None = None):
+                    extra: Optional[Dict[str, Any]] = None):
     if not TORCH_AVAILABLE:
         raise ImportError("PyTorch is required for training. Install with: pip install torch")
     os.makedirs(os.path.dirname(path), exist_ok=True)

@@ -27,23 +27,34 @@ classifiers = [
     "Topic :: Multimedia :: Graphics :: Graphics Conversion"
 ]
 
-# Core dependencies for inference
+# Core dependencies for inference only
 dependencies = [
   "numpy>=1.21,<3",
   "Pillow>=8.0.0",
   "tqdm>=4.65",
-  "timm>=0.9.16",
-  "opencv-python>=4.5.0",
-  "scikit-learn>=1.0.0"
+  "opencv-python>=4.5.0"
 ]
 
 # Optional dependencies
 [project.optional-dependencies]
+# For GPU inference
 gpu = [
     "onnxruntime-gpu>=1.16.0"
 ]
+
+# For CPU inference
 cpu = [
     "onnxruntime>=1.16.0"
+]
+
+# For development and training
+# Note: PyTorch must be installed manually based on your CUDA version
+# See TRAIN_README.md for installation instructions
+dev = [
+    "timm>=0.9.0",
+    "tensorboard>=2.4.0",
+    "scikit-learn>=1.0.0",
+    "onnx>=1.12.0"
 ]
 
 [tool.setuptools.package-dir]

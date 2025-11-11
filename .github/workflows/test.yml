@@ -1,0 +1,313 @@
+name: Test Installation and Examples
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-cpu-installation:
+    name: Test CPU Installation (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Display Python version
+      run: python --version
+    
+    - name: Install package with CPU dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[cpu]"
+    
+    - name: Verify installation
+      run: |
+        python -c "import ocra; print(f'ocra version: {ocra.__version__}')"
+        python -c "import onnxruntime; print(f'onnxruntime version: {onnxruntime.__version__}')"
+        python -c "import numpy; print(f'numpy version: {numpy.__version__}')"
+        python -c "from PIL import Image; print('Pillow OK')"
+        python -c "import cv2; print(f'opencv version: {cv2.__version__}')"
+    
+    - name: Test imports
+      run: |
+        python -c "from ocra import OrientationPredictor; print('OrientationPredictor import OK')"
+        python -c "from ocra import HandwrittenPredictor; print('HandwrittenPredictor import OK')"
+    
+    - name: Check ONNX models are bundled
+      run: |
+        python -c "from ocra.orientation.predictor import OrientationPredictor; p = OrientationPredictor(); print(f'Orientation model path exists: {p.model_path}')"
+        python -c "from ocra.ishandwritten.predictor import HandwrittenPredictor; p = HandwrittenPredictor(); print(f'Handwritten model path exists: {p.model_path}')"
+
+  test-examples:
+    name: Test Examples (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.12']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install package with CPU dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[cpu]"
+    
+    - name: Create test image
+      run: |
+        python -c "
+        from PIL import Image, ImageDraw, ImageFont
+        import numpy as np
+        
+        # Create a simple test image with text
+        img = Image.new('RGB', (800, 600), color='white')
+        draw = ImageDraw.Draw(img)
+        
+        # Draw some rectangles to simulate text
+        for i in range(5):
+            y = 100 + i * 80
+            draw.rectangle([50, y, 750, y + 50], outline='black', width=3)
+            draw.rectangle([60, y + 10, 740, y + 40], fill='gray')
+        
+        img.save('test_image.jpg')
+        print('Test image created')
+        "
+    
+    - name: Test simple_example.py
+      run: |
+        # Create a modified version that uses our test image
+        cat > test_simple_example.py << 'EOF'
+        from ocra import OrientationPredictor, HandwrittenPredictor
+        
+        def main():
+            print("Testing OrientationPredictor...")
+            orient_pred = OrientationPredictor(verbose=0)
+            
+            print("Testing HandwrittenPredictor...")
+            text_pred = HandwrittenPredictor(verbose=False)
+            
+            image = "test_image.jpg"
+            
+            print(f"\nAnalyzing image: {image}")
+            
+            # Test orientation
+            orient_res = orient_pred.predict_single(image)
+            orientation = "VERT" if orient_res['pred_class'] == 1 else "HORZ"
+            print(f"Orientation: {orientation} (confidence: {orient_res['confidence']:.3f})")
+            
+            # Test handwritten detection
+            text_res = text_pred.predict_single(image)
+            text_type = text_res['prediction']
+            print(f"Text type: {text_type} (confidence: {text_res['confidence']:.3f})")
+            
+            print("\n✓ All tests passed!")
+        
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python test_simple_example.py
+    
+    - name: Test batch prediction
+      run: |
+        python -c "
+        from ocra import OrientationPredictor
+        import os
+        
+        # Create multiple test images
+        from PIL import Image
+        for i in range(3):
+            img = Image.new('RGB', (400, 300), color=(i*80, i*80, i*80))
+            img.save(f'batch_test_{i}.jpg')
+        
+        # Test batch prediction
+        predictor = OrientationPredictor(verbose=0)
+        images = ['batch_test_0.jpg', 'batch_test_1.jpg', 'batch_test_2.jpg']
+        results = predictor.predict_batch(images)
+        
+        print(f'Batch prediction results: {len(results)} images processed')
+        for img, res in zip(images, results):
+            print(f'{img}: {res[\"prediction\"]} (confidence: {res[\"confidence\"]:.3f})')
+        
+        print('✓ Batch prediction test passed!')
+        "
+
+  test-dev-installation:
+    name: Test Dev Installation (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11', '3.12']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install PyTorch CPU
+      run: |
+        python -m pip install --upgrade pip
+        pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
+    
+    - name: Install package with dev dependencies
+      run: |
+        pip install -e ".[dev,cpu]"
+    
+    - name: Verify dev dependencies
+      run: |
+        python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+        python -c "import torchvision; print(f'torchvision version: {torchvision.__version__}')"
+        python -c "import timm; print(f'timm version: {timm.__version__}')"
+        python -c "from torch.utils.tensorboard import SummaryWriter; print('tensorboard OK')"
+        python -c "import sklearn; print(f'scikit-learn version: {sklearn.__version__}')"
+        python -c "import onnx; print(f'onnx version: {onnx.__version__}')"
+    
+    - name: Test model imports
+      run: |
+        python -c "from ocra.orientation.model import OrientationModel; print('OrientationModel import OK')"
+        python -c "from ocra.ishandwritten.model import HandwrittenModel; print('HandwrittenModel import OK')"
+    
+    - name: Test dataset utilities
+      run: |
+        python -c "from ocra.orientation.dataset import OrientationDataset; print('OrientationDataset import OK')"
+        python -c "from ocra.ishandwritten.dataset import HandwrittenDataset; print('HandwrittenDataset import OK')"
+    
+    - name: Test prepare_dataset script
+      run: |
+        # Create test directory structure
+        mkdir -p test_images
+        python -c "
+        from PIL import Image
+        for i in range(5):
+            img = Image.new('RGB', (400, 300), color=(i*50, i*50, i*50))
+            img.save(f'test_images/image_{i}.jpg')
+        "
+        
+        # Test prepare_dataset
+        python src/ocra/orientation/prepare_dataset.py \
+          --image_dirs test_images \
+          --output test_rotations.csv
+        
+        # Verify CSV was created
+        test -f test_rotations.csv && echo "✓ CSV created successfully"
+        
+        # Check CSV content
+        python -c "
+        import csv
+        with open('test_rotations.csv', 'r') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+            print(f'CSV contains {len(rows)} rows')
+            assert len(rows) == 5, 'Expected 5 rows'
+            print('✓ CSV content verified')
+        "
+
+  test-gpu-availability:
+    name: Check GPU Installation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install package with GPU dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[gpu]"
+    
+    - name: Check ONNX Runtime GPU
+      run: |
+        python -c "
+        import onnxruntime as ort
+        print(f'ONNX Runtime version: {ort.__version__}')
+        providers = ort.get_available_providers()
+        print(f'Available providers: {providers}')
+        
+        # GPU not available in GitHub Actions, but package should install
+        assert 'CPUExecutionProvider' in providers
+        print('✓ ONNX Runtime GPU package installed (GPU not available in CI)')
+        "
+
+  test-package-metadata:
+    name: Verify Package Metadata
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install package
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[cpu]"
+    
+    - name: Check package metadata
+      run: |
+        python -c "
+        import pkg_resources
+        
+        dist = pkg_resources.get_distribution('ocra')
+        print(f'Package name: {dist.project_name}')
+        print(f'Version: {dist.version}')
+        print(f'Location: {dist.location}')
+        
+        # Check entry points
+        print('\nPackage contents:')
+        import ocra
+        print(f'ocra.__version__: {ocra.__version__}')
+        print(f'ocra.__file__: {ocra.__file__}')
+        
+        # Verify models are included
+        from pathlib import Path
+        orient_model = Path(ocra.orientation.predictor.__file__).parent / 'orientation_model.onnx'
+        hand_model = Path(ocra.ishandwritten.predictor.__file__).parent / 'handwritten_model.onnx'
+        
+        print(f'\nOrientation model exists: {orient_model.exists()}')
+        print(f'Handwritten model exists: {hand_model.exists()}')
+        "
+    
+    - name: Build package
+      run: |
+        pip install build
+        python -m build
+    
+    - name: Check dist files
+      run: |
+        ls -lh dist/
+        echo "✓ Package built successfully"

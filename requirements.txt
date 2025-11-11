@@ -1,12 +1,26 @@
---index-url https://pypi.org/simple
---extra-index-url https://download.pytorch.org/whl/cu118
+# DEPRECATED: Используйте вместо этого:
+# pip install -e ".[dev,gpu]"
+# 
+# Для установки PyTorch см. TRAIN_README.md
+# Рекомендуемая команда для CUDA 11.8:
+# pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
 
-numpy>=1.19.0,<2.0
-torchvision==0.15.2+cu118
-torchaudio==2.0.2+cu118
-
-numpy>=1.19.0
+# Базовые зависимости (установятся автоматически с пакетом)
+numpy>=1.21
 Pillow>=8.0.0
+tqdm>=4.65
+opencv-python>=4.5.0
+
+# ONNX Runtime (выберите одно)
+# onnxruntime>=1.16.0        # для CPU
+# onnxruntime-gpu>=1.16.0    # для GPU
+
+# Dev зависимости (установятся с pip install -e ".[dev]")
+timm>=0.9.0
 tensorboard>=2.4.0
-tqdm
-onnxruntime-gpu>=1.16.0
+scikit-learn>=1.0.0
+onnx>=1.12.0
+
+# PyTorch - установите вручную!
+# torch>=2.0.1
+# torchvision>=0.15.2

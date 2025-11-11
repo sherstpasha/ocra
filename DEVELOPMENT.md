@@ -10,7 +10,7 @@ git clone https://github.com/sherstpasha/Ocra.git
 cd Ocra
 
 # 2. Установите PyTorch (выберите версию для вашей CUDA)
-pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # 3. Установите пакет в режиме разработки
 pip install -e ".[dev,gpu]"
@@ -217,9 +217,6 @@ A: Скопируйте структуру `orientation/` или `ishandwritten/
 ## Полезные команды
 
 ```bash
-# Локальный тест перед коммитом
-python test_local.py
-
 # Переустановка в dev режиме
 pip install -e ".[dev,gpu]" --force-reinstall
 
@@ -235,19 +232,6 @@ rm -rf build/ dist/ *.egg-info
 # Мониторинг обучения
 tensorboard --logdir=exp_orientation_b0
 ```
-
-## CI/CD
-
-Проект использует GitHub Actions для автоматического тестирования.
-
-📚 **См. документацию:** `.github/CI_CD.md`
-
-Workflows:
-- `test.yml` - Тестирование установки и примеров на разных ОС/Python
-- `compatibility.yml` - Проверка совместимости с разными версиями зависимостей
-- `quality.yml` - Линтинг, форматирование, проверка документации
-
-Статус: [![Test](https://github.com/sherstpasha/Ocra/actions/workflows/test.yml/badge.svg)](https://github.com/sherstpasha/Ocra/actions/workflows/test.yml)
 
 ## Ссылки
 

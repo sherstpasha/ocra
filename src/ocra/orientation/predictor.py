@@ -3,7 +3,6 @@ import glob
 from typing import List, Dict, Any
 import numpy as np
 from PIL import Image
-import torchvision.transforms as transforms
 from tqdm import tqdm
 
 try:
@@ -14,6 +13,7 @@ except ImportError:
     ort = None
 
 from .utils import Config, _get_data_cfg_compat
+from ..download_utils import get_model_path
 
 
 class OrientationPredictor:
@@ -31,9 +31,16 @@ class OrientationPredictor:
         module_dir = os.path.dirname(__file__)
         
         if model_path is None:
-            model_path = os.path.join(module_dir, "orientation_model.onnx")
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"ONNX model not found: {model_path}")
+            # Автоматически загружаем модель если не указан путь
+            try:
+                model_path = get_model_path("orientation")
+            except Exception as e:
+                # Fallback на локальную модель если есть
+                local_model = os.path.join(module_dir, "orientation_model.onnx")
+                if os.path.exists(local_model):
+                    model_path = local_model
+                else:
+                    raise RuntimeError(f"Failed to download model and no local model found: {e}")
         
         if config_path is None:
             config_path = os.path.join(module_dir, "config.json")
@@ -82,14 +89,8 @@ class OrientationPredictor:
         
         data_cfg = _get_data_cfg_compat(self.cfg.model_name)
         self.input_size = (data_cfg["input_size"][1], data_cfg["input_size"][2])
-        self.mean = data_cfg["mean"]
-        self.std = data_cfg["std"]
-        
-        self.transform = transforms.Compose([
-            transforms.Resize(self.input_size, antialias=True),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=self.mean, std=self.std)
-        ])
+        self.mean = np.array(data_cfg["mean"], dtype=np.float32)
+        self.std = np.array(data_cfg["std"], dtype=np.float32)
         
         if self.verbose:
             print(f"OrientationPredictor initialized")
@@ -159,11 +160,18 @@ class OrientationPredictor:
                 w, h = img_rgb.size
                 aspect = float(w) / float(h) if h > 0 else 1.0
                 
-                # Применяем трансформации
-                img_tensor = self.transform(img_rgb).unsqueeze(0)  # [1, 3, H, W]
+                # Resize
+                img_resized = img_rgb.resize(self.input_size, Image.BILINEAR)
+                
+                # To numpy array and normalize
+                img_array = np.array(img_resized, dtype=np.float32) / 255.0
+                img_array = (img_array - self.mean) / self.std
+                
+                # Transpose to CHW format and add batch dimension
+                img_tensor = np.transpose(img_array, (2, 0, 1))[np.newaxis, ...]  # [1, 3, H, W]
                 aspect_tensor = np.array([[aspect]], dtype=np.float32)  # [1, 1]
                 
-                return img_tensor.numpy(), aspect_tensor, aspect
+                return img_tensor, aspect_tensor, aspect
         except Exception as e:
             print(f"Error processing {image_path}: {e}")
             return None, None, None

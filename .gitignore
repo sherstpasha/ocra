@@ -27,6 +27,17 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# ONNX models (downloaded automatically)
+*.onnx
+*.pth
+*.ckpt
+
+# Training artifacts
+*.csv
+exp_*/
+logs/
+runs/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

@@ -1,10 +1,5 @@
 # ocra
 
-[![Test Installation and Examples](https://github.com/sherstpasha/Ocra/actions/workflows/test.yml/badge.svg)](https://github.com/sherstpasha/Ocra/actions/workflows/test.yml)
-[![Code Quality](https://github.com/sherstpasha/Ocra/actions/workflows/quality.yml/badge.svg)](https://github.com/sherstpasha/Ocra/actions/workflows/quality.yml)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 **ocra** — Python-библиотека для анализа изображений текста (сканы, вырезки и т.п.).
 
 Два основных инструмента:
@@ -23,6 +18,11 @@ pip install ocra[cpu]
 pip install ocra[gpu]
 ```
 
+**Примечание:** ONNX модели загружаются автоматически при первом использовании из GitHub Releases.
+Модели кешируются в `~/.cache/ocra/`.
+
+📥 **Подробнее о моделях:** [MODELS.md](MODELS.md)
+
 ### Для обучения моделей
 
 Для обучения требуются дополнительные зависимости и PyTorch.
@@ -32,7 +32,7 @@ pip install ocra[gpu]
 Краткая версия:
 ```bash
 # 1. Установить PyTorch для вашей версии CUDA
-pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # 2. Установить dev зависимости
 pip install -e ".[dev,gpu]"

@@ -4,6 +4,7 @@ from PIL import Image
 import cv2
 from typing import Tuple, List, Union, Optional
 import os
+from ..download_utils import get_model_path
 
 class HandwrittenPredictor:
     def __init__(
@@ -17,9 +18,16 @@ class HandwrittenPredictor:
         module_dir = os.path.dirname(__file__)
         
         if model_path is None:
-            model_path = os.path.join(module_dir, "handwritten_model.onnx")
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"ONNX model not found: {model_path}")
+            # Автоматически загружаем модель если не указан путь
+            try:
+                model_path = get_model_path("handwritten")
+            except Exception as e:
+                # Fallback на локальную модель если есть
+                local_model = os.path.join(module_dir, "handwritten_model.onnx")
+                if os.path.exists(local_model):
+                    model_path = local_model
+                else:
+                    raise RuntimeError(f"Failed to download model and no local model found: {e}")
         
         self.model_path = model_path
         

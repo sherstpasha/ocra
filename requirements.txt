@@ -1,9 +1,9 @@
 # DEPRECATED: Используйте вместо этого:
 # pip install -e ".[dev,gpu]"
 # 
-# Для установки PyTorch см. TRAIN_README.md
-# Рекомендуемая команда для CUDA 11.8:
-# pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
+# Для установки PyTorch см. https://pytorch.org/get-started/locally/
+# Пример для CUDA 11.8:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # Базовые зависимости (установятся автоматически с пакетом)
 numpy>=1.21
@@ -22,5 +22,5 @@ scikit-learn>=1.0.0
 onnx>=1.12.0
 
 # PyTorch - установите вручную!
-# torch>=2.0.1
-# torchvision>=0.15.2
+# torch
+# torchvision

@@ -65,8 +65,8 @@ where = ["src"]
 include = ["ocra*"]
 
 [tool.setuptools.package-data]
-"ocra.orientation" = ["config.json", "orientation_model.onnx"]
-"ocra.ishandwritten" = ["config.json", "handwritten_model.onnx"]
+"ocra.orientation" = ["config.json"]
+"ocra.ishandwritten" = ["config.json"]
 
 [project.urls]
 Homepage = "https://github.com/sherstpasha/Ocra"

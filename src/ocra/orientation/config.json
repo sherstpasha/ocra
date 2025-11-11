@@ -8,6 +8,7 @@
 
   "hidden_dim": 64,
   "drop": 0.2,
+  "aspect_dropout": 0.3,
 
   "exp_dir": "exp_orientation_b0",
 

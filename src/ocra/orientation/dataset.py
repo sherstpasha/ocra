@@ -7,9 +7,10 @@ from utils import _get_data_cfg_compat
 
 
 class OrientationDataset(Dataset):
-    def __init__(self, cfg, is_train=True):
+    def __init__(self, cfg, is_train=True, aspect_dropout=0.3):
         self.cfg = cfg
         self.is_train = is_train
+        self.aspect_dropout = aspect_dropout  # Вероятность зануления aspect ratio для регуляризации
 
         csv_path = getattr(cfg, "csv_path")
         if csv_path is None:
@@ -102,6 +103,10 @@ class OrientationDataset(Dataset):
 
         w, h = img.size
         aspect = float(w) / float(h) if h != 0 else 0.0
+        
+        # Aspect ratio dropout для регуляризации (только при обучении)
+        if self.is_train and random.random() < self.aspect_dropout:
+            aspect = 0.0
 
         x = (self.transform_train if self.is_train else self.transform_test)(img)
 
@@ -123,8 +128,11 @@ def make_datasets_three_way(cfg):
     os.makedirs(exp_dir, exist_ok=True)
     val_split_path = os.path.join(exp_dir, "val_split.txt")
     test_split_path = os.path.join(exp_dir, "test_split.txt")
+    
+    # Aspect dropout можно настраивать через конфиг
+    aspect_dropout = float(getattr(cfg, "aspect_dropout", 0.3))
 
-    base_train = OrientationDataset(cfg, is_train=True)
+    base_train = OrientationDataset(cfg, is_train=True, aspect_dropout=aspect_dropout)
     n_total = len(base_train)
     if n_total == 0:
         raise RuntimeError("No images found for splitting")

@@ -10,6 +10,7 @@ from tqdm import tqdm
 from dataset import make_datasets_three_way, collate_with_aspect
 from model import OrientationModel
 from utils import Config, set_seed, save_checkpoint, save_weights
+from prepare_dataset import create_rotations_csv
 
 
 def train_epoch(model, loader, optimizer, scaler, device):
@@ -68,6 +69,33 @@ def validate_epoch(model, loader, device):
 def train(cfg_path: str):
     cfg = Config(cfg_path)
     set_seed(cfg.seed)
+    
+    # Автоматическое создание rotations.csv если его нет
+    csv_path = getattr(cfg, "csv_path", None)
+    image_dir = getattr(cfg, "image_dir", None)
+    
+    # Если csv_path не указан или не существует, создаем его
+    if csv_path is None or not os.path.isfile(csv_path):
+        if image_dir is None:
+            raise ValueError("Either csv_path or image_dir must be specified in config")
+        
+        # image_dir может быть строкой или списком
+        if isinstance(image_dir, str):
+            image_dirs = [image_dir]
+        else:
+            image_dirs = image_dir
+        
+        # Создаем CSV в директории эксперимента
+        exp_dir = getattr(cfg, "exp_dir", "exp_orientation")
+        os.makedirs(exp_dir, exist_ok=True)
+        csv_path = os.path.join(exp_dir, "rotations.csv")
+        
+        print(f"Creating rotations.csv from image directories...")
+        extensions = getattr(cfg, "extensions", [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"])
+        create_rotations_csv(image_dirs, csv_path, extensions)
+        
+        # Обновляем конфиг
+        cfg.csv_path = csv_path
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")

@@ -12,6 +12,8 @@ class OrientationDataset(Dataset):
         self.is_train = is_train
 
         csv_path = getattr(cfg, "csv_path")
+        if csv_path is None:
+            raise ValueError("csv_path must be set in config before creating dataset")
         if not os.path.isfile(csv_path):
             raise FileNotFoundError(f"CSV not found: {csv_path}")
 
@@ -62,7 +64,12 @@ class OrientationDataset(Dataset):
         ])
 
 
-        self.root = getattr(cfg, "image_dir")
+        # image_dir может быть списком или строкой, берем первую если список
+        image_dir = getattr(cfg, "image_dir", "")
+        if isinstance(image_dir, list):
+            self.root = image_dir[0] if image_dir else ""
+        else:
+            self.root = image_dir
 
     @staticmethod
     def _rotate_90n_pil(img: Image.Image, angle: int) -> Image.Image:

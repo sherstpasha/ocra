@@ -1,7 +1,7 @@
 {
   "model_name": "mobilenetv3_small_050",
-  "image_dir": "C:/Users/USER/Desktop/archive_25_09/dataset/val/img",
-  "csv_path": "C:/Users/USER/Desktop/archive_25_09/dataset/val/rotations.csv",
+  "image_dir": ["C:/Users/USER/Desktop/archive_25_09/dataset/val/img"],
+  "csv_path": null,
   "extensions": [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"],
   "seed": 42,
   "p_vertical": 0.5,

@@ -28,6 +28,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[cpu]"
     
+    - name: Verify no PyTorch installed
+      run: |
+        python -c "
+        try:
+            import torch
+            print('❌ PyTorch should not be installed for inference!')
+            exit(1)
+        except ImportError:
+            print('✅ PyTorch correctly not installed')
+        "
+    
     - name: Test imports
       run: |
         python -c "from ocra import OrientationPredictor, HandwrittenPredictor; print('OK')"

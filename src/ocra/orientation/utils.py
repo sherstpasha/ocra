@@ -2,12 +2,40 @@ import json
 import os
 import random
 from typing import Dict, Any
-import torch
-import torch.nn as nn
-import timm
-from timm.data import resolve_data_config
+
+# Опциональные импорты для training
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
+    nn = None
+
+try:
+    import timm
+    from timm.data import resolve_data_config
+    TIMM_AVAILABLE = True
+except ImportError:
+    TIMM_AVAILABLE = False
+    timm = None
+    resolve_data_config = None
+
 
 def _get_data_cfg_compat(model_name: str):
+    """
+    Получает конфигурацию данных для модели.
+    Если timm недоступен, возвращает дефолтные значения.
+    """
+    if not TIMM_AVAILABLE:
+        # Дефолтные значения для mobilenetv3_small_050
+        return {
+            "input_size": (3, 224, 224),
+            "mean": (0.485, 0.456, 0.406),
+            "std": (0.229, 0.224, 0.225),
+        }
+    
     try:
         pre_cfg = timm.get_pretrained_cfg(model_name)
         if hasattr(pre_cfg, "to_dict"):
@@ -51,6 +79,8 @@ class Config:
 
 
 def set_seed(seed: int = 42):
+    if not TORCH_AVAILABLE:
+        raise ImportError("PyTorch is required for training. Install with: pip install torch")
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -58,9 +88,11 @@ def set_seed(seed: int = 42):
     torch.backends.cudnn.benchmark = True
 
 
-def save_checkpoint(path: str, model: nn.Module, optimizer, scheduler, scaler,
+def save_checkpoint(path: str, model, optimizer, scheduler, scaler,
                     epoch: int, global_step: int, best_val_loss: float, best_val_acc: float,
                     extra: Dict[str, Any] | None = None):
+    if not TORCH_AVAILABLE:
+        raise ImportError("PyTorch is required for training. Install with: pip install torch")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     ckpt = {
         "model": model.state_dict(),
@@ -76,7 +108,9 @@ def save_checkpoint(path: str, model: nn.Module, optimizer, scheduler, scaler,
     torch.save(ckpt, path)
 
 
-def load_checkpoint(path: str, model: nn.Module, optimizer=None, scheduler=None, scaler=None):
+def load_checkpoint(path: str, model, optimizer=None, scheduler=None, scaler=None):
+    if not TORCH_AVAILABLE:
+        raise ImportError("PyTorch is required for training. Install with: pip install torch")
     ckpt = torch.load(path, map_location="cpu")
     model.load_state_dict(ckpt["model"], strict=True)
     if optimizer and ckpt.get("optimizer"):
@@ -88,6 +122,8 @@ def load_checkpoint(path: str, model: nn.Module, optimizer=None, scheduler=None,
     return ckpt
 
 
-def save_weights(path: str, model: nn.Module):
+def save_weights(path: str, model):
+    if not TORCH_AVAILABLE:
+        raise ImportError("PyTorch is required for training. Install with: pip install torch")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     torch.save(model.state_dict(), path)

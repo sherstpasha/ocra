@@ -35,14 +35,7 @@ jobs:
     
     - name: Check PyTorch not importable
       run: |
-        python -c "
-        try:
-            import torch
-            print('ERROR: PyTorch should not be installed for inference!')
-            exit(1)
-        except ImportError:
-            print('OK: PyTorch correctly not installed')
-        "
+        python -c "import sys; import importlib.util; spec = importlib.util.find_spec('torch'); sys.exit(1 if spec else 0)"
     
     - name: Test imports
       run: |
@@ -50,18 +43,8 @@ jobs:
     
     - name: Test prediction
       run: |
-        python -c "
-        from PIL import Image
-        img = Image.new('RGB', (400, 300), color='white')
-        img.save('test.jpg')
-        
-        from ocra import OrientationPredictor
-        print('Creating predictor (will download model if needed)...')
-        predictor = OrientationPredictor(verbose=0)
-        result = predictor.predict_single('test.jpg')
-        print(f'Prediction: {result[\"prediction\"]}')
-        print('OK')
-        "
+        python -c "from PIL import Image; Image.new('RGB', (400, 300), color='white').save('test.jpg')"
+        python -c "from ocra import OrientationPredictor; p = OrientationPredictor(verbose=0); r = p.predict_single('test.jpg'); print('Prediction:', r['prediction'])"
   
   test-dev:
     runs-on: ubuntu-latest

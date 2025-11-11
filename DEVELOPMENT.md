@@ -132,26 +132,24 @@ twine upload dist/*
 
 ## Тестирование
 
-### Локальный тест перед коммитом
-
-```bash
-python test_local.py
-```
-
-Этот скрипт проверит:
-- ✅ Наличие всех обязательных файлов
-- ✅ Импорт основных модулей
-- ✅ Наличие всех зависимостей
-- ✅ Валидность pyproject.toml
-
 ### Проверка установки
 
 ```bash
 # CPU версия
-pip install -e ".[cpu,dev]"
+pip install -e ".[cpu]"
 
-# GPU версия
-pip install -e ".[gpu,dev]"
+# GPU версия  
+pip install -e ".[gpu]"
+
+# Dev версия с PyTorch
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[dev,cpu]"
+```
+
+### Быстрый тест импорта
+
+```bash
+python -c "from ocra import OrientationPredictor, HandwrittenPredictor; print('OK')"
 ```
 
 ### Проверка зависимостей
